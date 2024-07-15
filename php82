@@ -1,0 +1,52 @@
+<?php
+/*
+* Class CSRFSecure for PHP82
+* @version v1.0.0
+* @author RADITEK GROUP (PT. RAFFA DIGITAL TEKNOLOGI)
+* @website https://www.raditek.co.id
+* @whatsapp (+62)819-1400-5555
+* @copyright (c) 2017-2024 PT. RAFFA DIGITAL TEKNOLOGI, All Rights Reserved
+*/
+
+class CSRFSecure {
+    protected $token;
+
+    public function __construct() {
+        // Start session
+        if (session_status() == PHP_SESSION_NONE) {
+            session_start();
+        }
+        
+        // Generate CSRF token if not already set
+        if (!isset($_SESSION['csrf_token'])) {
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        }
+        
+        $this->token = $_SESSION['csrf_token'];
+    }
+
+    public function getToken() {
+        return $this->token;
+    }
+
+    public function validateToken($userToken) {
+        // Validate CSRF token
+        return hash_equals($this->token, $userToken);
+    }
+}
+
+// Generate Token
+$csrfSecure = new CSRFSecure();
+$csrfToken = $csrfSecure->getToken();
+
+// Masukkan Token ke dalam Formulir <input>
+$csrf_html = "<input type=\"hidden\" id=\"csrf_token\" name=\"csrf_token\" value=\"".htmlspecialchars($csrfToken)."\">";
+
+// Validasi token saat memproses formulir
+if (isset($_POST['csrf_token']) && $csrfSecure->validateToken($_POST['csrf_token'])) {
+    // Token CSRF valid, proses data formulir
+    // ...
+} else {
+    // Token CSRF tidak valid, handle error
+    die("Invalid CSRF token!");
+}
